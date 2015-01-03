@@ -1,0 +1,10 @@
+{
+    "name": "zdf-mediathek",
+    "hostprefix": "zdf.de",
+    "displayname": "ZDF Mediathek",
+    "version": "0.1",
+    "authentication": "no",
+    "module": "zdfmediathek.php",
+    "class": "SynoFileHostingZdfMediathek",
+    "description": "Download Videos from ZDF Mediathek"
+}

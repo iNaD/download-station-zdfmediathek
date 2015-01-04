@@ -1,5 +1,5 @@
 {
-    "name": "zdf-mediathek",
+    "name": "zdfmediathek",
     "hostprefix": "zdf.de",
     "displayname": "ZDF Mediathek",
     "version": "0.1",

@@ -12,10 +12,15 @@
 
 ## Nutzung
 
-Nach der erfolgreichen Installation und Konfiguration kann nun endlich mit dem Herunterladen begonnen werden.
+Nach der erfolgreichen Installation kann mit dem Herunterladen begonnen werden.
 Ruft einfach die [ZDF Mediathek](http://zdf.de/ZDFmediathek) auf und sucht die interessante Folge heraus.
 
 Dieser Link wird nun ganz normal bei der Download Station hinzugefügt und der Download sollte den Provider nutzen und nach kurzer Zeit starten.
+
+## Hinweise
+
+- **Wichtig** Es wird zur Zeit die höchstmögliche MP4 Qualität heruntergeladen die verfügbar ist.
+- Es könnte passieren, dass ein Download nicht funktioniert und keine Videodatei heruntergeladen wird. Sollte dies der Fall sein, so [erstelle ein Ticket](https://github.com/iNaD/download-station-zdfmediathek/issues/new) mit dem Link zur Mediathek und ein paar Informationen über deine Diskstation.
 
 ## Lizenz
 

@@ -89,7 +89,7 @@ class SynoFileHostingZdfMediathek {
                 $bestFormat = array(
                     'quality'   => -1,
                     'bitrate'   => -1,
-                    'element'   => null,
+                    'url'       => '',
                 );
 
                 $matches = array();

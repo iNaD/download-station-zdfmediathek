@@ -6,7 +6,7 @@
 
 2. Auf den Reiter `Dateihosting` wechseln und auf `Hinzufügen` klicken
 
-3. Dort dann die Datei `zdf-mediathek.host` auswählen und auf `Hinzufügen` klicken
+3. Dort dann die Datei `zdfmediathek.host` auswählen und auf `Hinzufügen` klicken
 
 4. In der Liste sollte nach einer kurzen Ladezeit `ZDF Mediathek` auftauchen
 

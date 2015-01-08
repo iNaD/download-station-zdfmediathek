@@ -2,7 +2,7 @@
 
 /**
  * @author Daniel Gehn <me@theinad.com>
- * @version 0.1
+ * @version 0.2
  * @copyright 2015 Daniel Gehn
  * @license http://opensource.org/licenses/MIT Licensed under MIT License
  */

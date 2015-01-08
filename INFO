@@ -2,7 +2,7 @@
     "name": "zdfmediathek",
     "hostprefix": "zdf.de",
     "displayname": "ZDF Mediathek",
-    "version": "0.1",
+    "version": "0.2",
     "authentication": "no",
     "module": "zdfmediathek.php",
     "class": "SynoFileHostingZdfMediathek",

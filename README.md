@@ -10,6 +10,16 @@
 
 4. In der Liste sollte nach einer kurzen Ladezeit `ZDF Mediathek` auftauchen
 
+## Update
+
+1. Im Webinterface von der Download Station die Einstellungen aufrufen.
+
+2. Auf den Reiter `Dateihosting` wechseln, `ZDF Mediathek` auswählen und auf `Löschen` klicken
+
+4. Aus der Liste sollte nach einer kurzen Ladezeit `ZDF Mediathek` verschwinden
+
+5. Dem Abschnitt `Installation` folgen
+
 ## Nutzung
 
 Nach der erfolgreichen Installation kann mit dem Herunterladen begonnen werden.

@@ -71,85 +71,94 @@ class SynoFileHostingZdfMediathek {
 
             $this->DebugLog("Getting XML data from http://zdf.de/ZDFmediathek/xmlservice/web/beitragsDetails?id=$id&ak=web");
 
-            $RawXML = file_get_contents('http://zdf.de/ZDFmediathek/xmlservice/web/beitragsDetails?id=' . $id . '&ak=web');
+            $curl = curl_init();
 
-            if($RawXML)
+            curl_setopt($curl, CURLOPT_URL, 'http://zdf.de/ZDFmediathek/xmlservice/web/beitragsDetails?id=' . $id . '&ak=web');
+            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($curl, CURLOPT_USERAGENT, DOWNLOAD_STATION_USER_AGENT);
+            curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+
+            $RawXML = curl_exec($curl);
+
+            if(!$RawXML)
             {
-                $this->DebugLog("Processing XML data");
-
-                $match = array();
-
-                preg_match('#<statuscode>(.*?)</statuscode>#i', $RawXML, $match);
-
-                if($match[1] !== 'ok') {
-                    $this->DebugLog("Status not ok, Statuscode " . $match[1]);
-                    return ERR_FILE_NO_EXIST;
-                }
-
-                $bestFormat = array(
-                    'quality'   => -1,
-                    'bitrate'   => -1,
-                    'url'       => '',
-                );
-
-                $matches = array();
-
-                preg_match_all('#<formitaet basetype="(.*?)".*?>(.*?)</formitaet>#is', $RawXML, $matches);
-
-                foreach($matches[1] as $index => $basetype)
-                {
-                    if(strpos($basetype, 'mp4_http') !== false)
-                    {
-                        $match = array();
-                        preg_match('#<facet>(.*?)</facet>#is', $matches[2][$index], $match);
-
-                        if(in_array($match[1], self::$UnsupportedFacets))
-                        {
-                            continue;
-                        }
-
-                        $match = array();
-                        preg_match('#<quality>(.*?)</quality>#is', $matches[2][$index], $match);
-
-                        $quality = self::$QualityPriority[$match[1]];
-
-                        $match = array();
-                        preg_match('#<videoBitrate>(.*?)</videoBitrate>#is', $matches[2][$index], $match);
-
-                        $bitrate = $match[1];
-
-                        if($quality >= $bestFormat['quality'] && $bitrate > $bestFormat['bitrate'])
-                        {
-                            $match = array();
-                            preg_match('#<url>(.*?)</url>#is', $matches[2][$index], $match);
-
-                            $url = $match[1];
-
-                            $bestFormat = array(
-                                'quality'   => $quality,
-                                'bitrate'   => $bitrate,
-                                'url'       => $url,
-                            );
-                        }
-                    }
-                }
-
-                if($bestFormat['url'] === '')
-                {
-                    $this->DebugLog('No format found');
-                    return false;
-                }
-
-                $this->DebugLog('Best format is ' . json_encode($bestFormat));
-
-                $DownloadInfo = array();
-                $DownloadInfo[DOWNLOAD_URL] = trim($bestFormat['url']);
-
-                return $DownloadInfo;
+                $this->DebugLog("Failed to retrieve XML. Error Info: " . curl_error($curl));
+                return false;
             }
 
-            $this->DebugLog("Failed to retrieve XML.");
-            return false;
+            curl_close($curl);
+
+            $this->DebugLog("Processing XML data");
+
+            $match = array();
+
+            preg_match('#<statuscode>(.*?)</statuscode>#i', $RawXML, $match);
+
+            if($match[1] !== 'ok') {
+                $this->DebugLog("Status not ok, Statuscode " . $match[1]);
+                return ERR_FILE_NO_EXIST;
+            }
+
+            $bestFormat = array(
+                'quality'   => -1,
+                'bitrate'   => -1,
+                'url'       => '',
+            );
+
+            $matches = array();
+
+            preg_match_all('#<formitaet basetype="(.*?)".*?>(.*?)</formitaet>#is', $RawXML, $matches);
+
+            foreach($matches[1] as $index => $basetype)
+            {
+                if(strpos($basetype, 'mp4_http') !== false)
+                {
+                    $match = array();
+                    preg_match('#<facet>(.*?)</facet>#is', $matches[2][$index], $match);
+
+                    if(in_array($match[1], self::$UnsupportedFacets))
+                    {
+                        continue;
+                    }
+
+                    $match = array();
+                    preg_match('#<quality>(.*?)</quality>#is', $matches[2][$index], $match);
+
+                    $quality = self::$QualityPriority[$match[1]];
+
+                    $match = array();
+                    preg_match('#<videoBitrate>(.*?)</videoBitrate>#is', $matches[2][$index], $match);
+
+                    $bitrate = $match[1];
+
+                    if($quality >= $bestFormat['quality'] && $bitrate > $bestFormat['bitrate'])
+                    {
+                        $match = array();
+                        preg_match('#<url>(.*?)</url>#is', $matches[2][$index], $match);
+
+                        $url = $match[1];
+
+                        $bestFormat = array(
+                            'quality'   => $quality,
+                            'bitrate'   => $bitrate,
+                            'url'       => $url,
+                        );
+                    }
+                }
+            }
+
+            if($bestFormat['url'] === '')
+            {
+                $this->DebugLog('No format found');
+                return false;
+            }
+
+            $this->DebugLog('Best format is ' . json_encode($bestFormat));
+
+            $DownloadInfo = array();
+            $DownloadInfo[DOWNLOAD_URL] = trim($bestFormat['url']);
+
+            return $DownloadInfo;
         }
 
         $this->DebugLog("Couldn't identify id");

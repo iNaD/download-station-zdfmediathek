@@ -134,6 +134,12 @@ class SynoFileHostingZdfMediathek {
                     }
                 }
 
+                if($bestFormat['url'] === '')
+                {
+                    $this->DebugLog('No format found');
+                    return false;
+                }
+
                 $this->DebugLog('Best format is ' . json_encode($bestFormat));
 
                 $DownloadInfo = array();

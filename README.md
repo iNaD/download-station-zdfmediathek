@@ -1,5 +1,9 @@
 # Synology Download Station Hoster Plugin für ZDF Mediathek
 
+## Features
+- Unterstützte Mediatheken: ZDF, 3Sat
+- Lädt in der höchst verfügbaren MP4 Qualität herunter
+
 ## Installation
 
 1. Im Webinterface von der Download Station die Einstellungen aufrufen.

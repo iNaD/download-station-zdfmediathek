@@ -3,6 +3,7 @@
 ## Features
 - Unterstützte Mediatheken: [ZDF](http://www.zdf.de/ZDFmediathek), [3Sat](http://www.3sat.de/mediathek/)
 - Lädt in der höchst verfügbaren MP4 Qualität herunter
+- Benennt die Datei nach Sendungstitel
 
 ## Installation
 

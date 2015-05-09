@@ -2,7 +2,7 @@
 
 /**
  * @author Daniel Gehn <me@theinad.com>
- * @version 0.3
+ * @version 0.4a
  * @copyright 2015 Daniel Gehn
  * @license http://opensource.org/licenses/MIT Licensed under MIT License
  */
@@ -24,7 +24,7 @@ class SynoFileHostingZdfMediathek {
     );
 
     private $LogPath = '/tmp/zdf-mediathek.log';
-    private $LogEnabled = false;
+    private $LogEnabled = true;
 
     public function __construct($Url, $Username = '', $Password = '', $HostInfo = '') {
         $this->Url = $Url;
@@ -216,8 +216,27 @@ class SynoFileHostingZdfMediathek {
 
         $this->DebugLog('Best format is ' . json_encode($bestFormat));
 
+        $url = trim($bestFormat['url']);
+
+        $match = array();
+        $title = '';
+        $pathinfo = pathinfo($url);
+
+        if(preg_match('#<title>(.*?)<\/title>#i', $RawXML, $match) == 1)
+        {
+            $title = $match[1];
+            $filename = $title . '.' . $pathinfo['extension'];
+        }
+        else
+        {
+            $filename = $pathinfo['basename'];
+        }
+
+        $this->DebugLog('Filename based on title "' . $title . '" is: ' . $filename);
+
         $DownloadInfo = array();
-        $DownloadInfo[DOWNLOAD_URL] = trim($bestFormat['url']);
+        $DownloadInfo[DOWNLOAD_URL] = $url;
+        $DownloadInfo[DOWNLOAD_FILE] = $filename;
 
         return $DownloadInfo;
     }

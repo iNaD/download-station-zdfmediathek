@@ -220,23 +220,43 @@ class SynoFileHostingZdfMediathek {
 
         $match = array();
         $title = '';
+        $episodeTitle = '';
+        $filename = '';
         $pathinfo = pathinfo($url);
+
+        if(preg_match('#<originChannelTitle>(.*?)<\/originChannelTitle>#i', $RawXML, $match) == 1)
+        {
+            $title = $match[1];
+            $filename = $title;
+        }
+
+        $match = array();
 
         if(preg_match('#<title>(.*?)<\/title>#i', $RawXML, $match) == 1)
         {
-            $title = $match[1];
-            $filename = $title . '.' . $pathinfo['extension'];
+            $episodeTitle = $match[1];
+            $filename .= ' - ' . $episodeTitle;
         }
         else
         {
-            $filename = $pathinfo['basename'];
+            $filename .= ' - ' . $pathinfo['basename'];
         }
 
-        $this->DebugLog('Filename based on title "' . $title . '" is: ' . $filename);
+
+        if(empty($filename))
+        {
+            $filename = $pathinfo['basename'];
+        }
+        else
+        {
+            $filename .= '.' . $pathinfo['extension'];
+        }
+
+        $this->DebugLog('Filename based on title "' . $title . '" and episodeTitle "' . $episodeTitle . '" is: "' . $filename . '"');
 
         $DownloadInfo = array();
         $DownloadInfo[DOWNLOAD_URL] = $url;
-        $DownloadInfo[DOWNLOAD_FILE] = $filename;
+        $DownloadInfo[DOWNLOAD_FILENAME] = $filename;
 
         return $DownloadInfo;
     }

@@ -41,7 +41,7 @@ class SynoFileHostingZdfMediathek extends TheiNaDProvider {
         return FALSE;
     }
 
-    private function dreisat()
+    protected function dreisat()
     {
         if(preg_match('#mediathek\/(?:.*)obj=(\d+)#i', $this->Url, $match) === 1)
         {
@@ -68,7 +68,7 @@ class SynoFileHostingZdfMediathek extends TheiNaDProvider {
         return FALSE;
     }
 
-    private function zdf()
+    protected function zdf()
     {
         if(preg_match('#beitrag/video/([0-9]+)#i', $this->Url, $match) === 1)
         {
@@ -95,7 +95,7 @@ class SynoFileHostingZdfMediathek extends TheiNaDProvider {
         return FALSE;
     }
 
-    private function processXML($RawXML)
+    protected function processXML($RawXML)
     {
         $match = array();
 

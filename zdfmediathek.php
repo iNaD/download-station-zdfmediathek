@@ -7,11 +7,9 @@
  * @license http://opensource.org/licenses/MIT Licensed under MIT License
  */
 
-class SynoFileHostingZdfMediathek {
-    private $Url;
-    private $Username;
-    private $Password;
-    private $HostInfo;
+require_once 'provider.php';
+
+class SynoFileHostingZdfMediathek extends TheiNaDProvider {
 
     static $QualityPriority = array(
         'veryhigh'  => 2,
@@ -23,42 +21,10 @@ class SynoFileHostingZdfMediathek {
         'hbbtv',
     );
 
-    private $LogPath = '/tmp/zdf-mediathek.log';
-    private $LogEnabled = true;
-
-    public function __construct($Url, $Username = '', $Password = '', $HostInfo = '') {
-        $this->Url = $Url;
-        $this->Username = $Username;
-        $this->Password = $Password;
-        $this->HostInfo = $HostInfo;
-
-        $this->DebugLog("URL: $Url");
-    }
-
-    //This function returns download url.
-    public function GetDownloadInfo() {
-        $ret = FALSE;
-
-        $this->DebugLog("GetDownloadInfo called");
-
-        $ret = $this->Download();
-
-        return $ret;
-    }
-
-    public function onDownloaded()
-    {
-    }
-
-    public function Verify($ClearCookie = '')
-    {
-        $this->DebugLog("Verifying User");
-
-        return USER_IS_PREMIUM;
-    }
+    protected $LogPath = '/tmp/zdf-mediathek.log';
 
     //This function gets the download url
-    private function Download() {
+    public function GetDownloadInfo() {
 
         $this->DebugLog("Getting download url for $this->Url");
 
@@ -85,22 +51,12 @@ class SynoFileHostingZdfMediathek {
 
             $this->DebugLog("Getting XML data from http://www.3sat.de/mediathek/xmlservice/web/beitragsDetails?ak=web&id=$id&ak=web");
 
-            $curl = curl_init();
+            $RawXML = $this->curlRequest('http://www.3sat.de/mediathek/xmlservice/web/beitragsDetails?ak=web&id=' . $id . '&ak=web');
 
-            curl_setopt($curl, CURLOPT_URL, 'http://www.3sat.de/mediathek/xmlservice/web/beitragsDetails?ak=web&id=' . $id . '&ak=web');
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($curl, CURLOPT_USERAGENT, DOWNLOAD_STATION_USER_AGENT);
-            curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-
-            $RawXML = curl_exec($curl);
-
-            if(!$RawXML)
+            if($RawXML === null)
             {
-                $this->DebugLog("Failed to retrieve XML. Error Info: " . curl_error($curl));
                 return false;
             }
-
-            curl_close($curl);
 
             $this->DebugLog("Processing XML data");
 
@@ -122,22 +78,12 @@ class SynoFileHostingZdfMediathek {
 
             $this->DebugLog("Getting XML data from http://zdf.de/ZDFmediathek/xmlservice/web/beitragsDetails?id=$id&ak=web");
 
-            $curl = curl_init();
+            $RawXML = $this->curlRequest('http://zdf.de/ZDFmediathek/xmlservice/web/beitragsDetails?id=' . $id . '&ak=web');
 
-            curl_setopt($curl, CURLOPT_URL, 'http://zdf.de/ZDFmediathek/xmlservice/web/beitragsDetails?id=' . $id . '&ak=web');
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($curl, CURLOPT_USERAGENT, DOWNLOAD_STATION_USER_AGENT);
-            curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-
-            $RawXML = curl_exec($curl);
-
-            if(!$RawXML)
+            if($RawXML === null)
             {
-                $this->DebugLog("Failed to retrieve XML. Error Info: " . curl_error($curl));
                 return false;
             }
-
-            curl_close($curl);
 
             $this->DebugLog("Processing XML data");
 
@@ -256,17 +202,10 @@ class SynoFileHostingZdfMediathek {
 
         $DownloadInfo = array();
         $DownloadInfo[DOWNLOAD_URL] = $url;
-        $DownloadInfo[DOWNLOAD_FILENAME] = $filename;
+        $DownloadInfo[DOWNLOAD_FILENAME] = $this->safeFilename($filename);
 
         return $DownloadInfo;
     }
 
-    private function DebugLog($message)
-    {
-        if($this->LogEnabled === true)
-        {
-            file_put_contents($this->LogPath, $message . "\n", FILE_APPEND);
-        }
-    }
 }
 ?>

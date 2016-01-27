@@ -70,18 +70,30 @@ class SynoFileHostingZdfMediathek extends TheiNaDProvider {
 
     protected function zdf()
     {
-        if(preg_match('#beitrag/video/([0-9]+)#i', $this->Url, $match) === 1)
-        {
-            $id = $match[1];
+        $id = null;
 
+        /**
+         * Default url structure of ZDF Mediathek
+         */
+        if(preg_match('#beitrag/video/([0-9]+)#i', $this->Url, $match) === 1) {
+            $id = $match[1];
+        }
+
+        /**
+         * Url structure of webapp.zdf.de (seems to be the mobile version of ZDF Mediathek)
+         */
+        if(preg_match('#aID=([0-9]+)#i', $this->Url, $match) === 1) {
+            $id = $match[1];
+        }
+
+        if($id != null) {
             $this->DebugLog("ID is $id");
 
             $this->DebugLog("Getting XML data from http://zdf.de/ZDFmediathek/xmlservice/web/beitragsDetails?id=$id&ak=web");
 
             $RawXML = $this->curlRequest('http://zdf.de/ZDFmediathek/xmlservice/web/beitragsDetails?id=' . $id . '&ak=web');
 
-            if($RawXML === null)
-            {
+            if ($RawXML === null) {
                 return false;
             }
 
@@ -168,7 +180,6 @@ class SynoFileHostingZdfMediathek extends TheiNaDProvider {
         $title = '';
         $episodeTitle = '';
         $filename = '';
-        $pathinfo = pathinfo($url);
 
         if(preg_match('#<originChannelTitle>(.*?)<\/originChannelTitle>#i', $RawXML, $match) == 1)
         {
@@ -183,26 +194,14 @@ class SynoFileHostingZdfMediathek extends TheiNaDProvider {
             $episodeTitle = $match[1];
             $filename .= ' - ' . $episodeTitle;
         }
-        else
-        {
-            $filename .= ' - ' . $pathinfo['basename'];
-        }
 
-
-        if(empty($filename))
-        {
-            $filename = $pathinfo['basename'];
-        }
-        else
-        {
-            $filename .= '.' . $pathinfo['extension'];
-        }
+        $filename = $this->buildFilename($url, $filename);
 
         $this->DebugLog('Filename based on title "' . $title . '" and episodeTitle "' . $episodeTitle . '" is: "' . $filename . '"');
 
         $DownloadInfo = array();
         $DownloadInfo[DOWNLOAD_URL] = $url;
-        $DownloadInfo[DOWNLOAD_FILENAME] = $this->safeFilename($filename);
+        $DownloadInfo[DOWNLOAD_FILENAME] = $filename;
 
         return $DownloadInfo;
     }

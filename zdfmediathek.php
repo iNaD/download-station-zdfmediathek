@@ -19,7 +19,11 @@ class SynoFileHostingZdfMediathek extends TheiNaDProvider {
 
     static $UnsupportedFacets = array(
         'hbbtv',
+        'restriction_useragent',
     );
+
+    protected static $ApiBaseUrl = 'https://api.zdf.de';
+    protected static $BaseUrl = 'https://www.zdf.de';
 
     protected $LogPath = '/tmp/zdf-mediathek.log';
 
@@ -70,41 +74,119 @@ class SynoFileHostingZdfMediathek extends TheiNaDProvider {
 
     protected function zdf()
     {
-        $id = null;
+        $videoPage = $this->curlRequest($this->Url);
 
-        /**
-         * Default url structure of ZDF Mediathek
-         */
-        if(preg_match('#beitrag/video/([0-9]+)#i', $this->Url, $match) === 1) {
-            $id = $match[1];
+        if($videoPage == null) {
+            return false;
         }
 
-        /**
-         * Url structure of webapp.zdf.de (seems to be the mobile version of ZDF Mediathek)
-         */
-        if(preg_match('#aID=([0-9]+)#i', $this->Url, $match) === 1) {
-            $id = $match[1];
+        $this->DebugLog("got video page");
+
+        $configUrl = $this->getConfigUrl($videoPage);
+
+        if($configUrl == null) {
+            return false;
         }
 
-        if($id != null) {
-            $this->DebugLog("ID is $id");
+        $this->DebugLog("got config url");
 
-            $this->DebugLog("Getting XML data from http://zdf.de/ZDFmediathek/xmlservice/web/beitragsDetails?id=$id&ak=web");
+        $metaUrl = $this->getMetaUrl($videoPage);
 
-            $RawXML = $this->curlRequest('http://zdf.de/ZDFmediathek/xmlservice/web/beitragsDetails?id=' . $id . '&ak=web');
+        if($metaUrl == null) {
+            return false;
+        }
 
-            if ($RawXML === null) {
-                return false;
+        $this->DebugLog("got meta url");
+
+        $configRaw = $this->curlRequest($configUrl);
+
+        if($configRaw == null) {
+            return false;
+        }
+
+        $this->DebugLog("got config");
+
+        $config = json_decode($configRaw);
+
+        $metaRaw = $this->apiRequest($metaUrl, $config->apiToken);
+
+        if($metaRaw == null) {
+            return false;
+        }
+
+        $this->DebugLog("got meta");
+
+        $meta = json_decode($metaRaw);
+
+        $streamsUri = self::$ApiBaseUrl . $meta->mainVideoContent->{"http://zdf.de/rels/target"}->{"http://zdf.de/rels/streams/ptmd"};
+
+        $streamsRaw = $this->apiRequest($streamsUri, $config->apiToken);
+
+        $streams = json_decode($streamsRaw);
+
+        $bestQuality = array(
+            'quality' => null,
+            'rating' => -1,
+            'uri' => null,
+        );
+
+        foreach ($streams->priorityList as $priority) {
+            foreach ($priority->formitaeten as $formitaet) {
+                if(strpos($formitaet->type, 'mp4_http') !== false) {
+                    $unsupportedFacet = false;
+
+                    foreach ($formitaet->facets as $facet) {
+                        if(in_array($facet, self::$UnsupportedFacets)) {
+                            $unsupportedFacet = true;
+                        }
+                    }
+
+                    if($unsupportedFacet === false) {
+                        foreach ($formitaet->qualities as $quality) {
+                            if(isset(self::$QualityPriority[$quality->quality])) {
+                                if (self::$QualityPriority[$quality->quality] > $bestQuality['rating']) {
+                                    $currentQuality = array(
+                                        'quality' => $quality->quality,
+                                        'rating' => self::$QualityPriority[$quality->quality],
+                                        'uri' => null,
+                                    );
+
+                                    foreach ($quality->audio->tracks as $track) {
+                                        if ($track->language === "deu") {
+                                            $currentQuality['uri'] = $track->uri;
+                                            break;
+                                        }
+                                    }
+
+                                    if ($currentQuality['uri'] !== null) {
+                                        $bestQuality = $currentQuality;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
-
-            $this->DebugLog("Processing XML data");
-
-            return $this->processXML($RawXML);
         }
 
-        $this->DebugLog("Couldn't identify id");
+        if($bestQuality['uri'] !== null) {
+            $splitNielsenTitle = explode('|', $meta->tracking->nielsen->content->title);
 
-        return FALSE;
+            $url = $bestQuality['uri'];
+            $videoName = $splitNielsenTitle[0] . ' - ' . $splitNielsenTitle[1];
+
+            $filename = $this->buildFilename($url, $videoName);
+
+            $this->DebugLog('Filename based on title "' . $splitNielsenTitle[0] . '" and episodeTitle "' . $splitNielsenTitle[1] . '" is: "' . $filename . '"');
+
+            $DownloadInfo = array();
+            $DownloadInfo[DOWNLOAD_URL] = $url;
+            $DownloadInfo[DOWNLOAD_FILENAME] = $filename;
+
+            return $DownloadInfo;
+        }
+
+        return false;
     }
 
     protected function processXML($RawXML)
@@ -204,6 +286,33 @@ class SynoFileHostingZdfMediathek extends TheiNaDProvider {
         $DownloadInfo[DOWNLOAD_FILENAME] = $filename;
 
         return $DownloadInfo;
+    }
+
+    protected function getConfigUrl($content) {
+        if(preg_match('#"config": "(.*?)",#i', $content, $match) !== 1) {
+            return null;
+        }
+
+        return self::$BaseUrl . $match[1];
+    }
+
+    protected function getMetaUrl($content)
+    {
+        if(preg_match('#"content": "(.*?)",#i', $content, $match) !== 1) {
+            return null;
+        }
+
+        return $match[1];
+    }
+
+    protected function apiRequest($url, $apiToken) {
+        $this->DebugLog('API Request to "' . $url . '" with token "' . $apiToken .'"');
+
+        return $this->curlRequest($url, array(
+            CURLOPT_HTTPHEADER => array(
+                'Api-Auth: Bearer ' . $apiToken
+            )
+        ));
     }
 
 }
